@@ -1,113 +1,29 @@
 from ROOT import *
 gROOT.LoadMacro('atlasstyle/AtlasStyle.C')
 gROOT.LoadMacro('atlasstyle/AtlasLabels.C')
+import math
 
 class PlotHiggs():
 
-    def __init__(self):
+    def __init__(self, nBins = 34, lowerLimit = 80, upperLimit = 250, titleOffset = 0.05,
+                 maxY = 35, channelTextSize = 0.0425, luminosityTextSize = 0.0325):
         #Setting global variables for histograms
-        self.nBins = 34
-        self.lowerLimit = 80
-        self.upperLimit = 250
-        self.titleOffset = 0.05
-        self.maxY = 35
+        self.nBins = nBins
+        self.lowerLimit = lowerLimit
+        self.upperLimit = upperLimit
+        self.titleOffset = titleOffset
+        self.maxY = maxY
 
-        self.channelTextSize = 0.0425
+        self.channelTextSize = channelTextSize
         self.channelLatexString = ['4#mu','2#mu2e','2e2#mu','4e']
-        self.luminosityTextSize = 0.0325
+        self.luminosityTextSize = luminosityTextSize
         self.luminosityLatexStrings = ["#sqrt{s} = 7 TeV: #intLdt = 4.5 fb^{-1}",
                                       "#sqrt{s} = 8 TeV: #intLdt = 20.3 fb^{-1}"]
         self.dir = 'C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/'
         self.channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e']
-        
-        
-        
-    def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l', luminosityYear = ''):
-        # Draw the histogram with given option
-        histogram.Draw(option)
-        
-        # Add titles to the histogram axes
-        histogram.GetXaxis().SetTitle("m_{4l}[GeV]")
-        histogram.GetYaxis().SetTitle("Events/2.5GeV")
 
-        # Get the max y value on the graph
-        gPad.Update()
-        maxY = gPad.GetFrame().GetY2()
 
-        # Draw latex titles
-        latex = TLatex()
-        latex.SetTextAlign(12)
-        # Title designating the lepton channel
-        latex.SetTextSize(self.channelTextSize)
-        latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*0.9, "H #rightarrow ZZ^{(*)} #rightarrow 4l")
-        # Title(s) designating the year(s) (luminosity)
-        latex.SetTextSize(self.luminosityTextSize)
-        if len(luminosityYear == 0):
-            for index,luminosityString in enumerate(self.luminosityLatexStrings):
-                latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*(0.8-0.1*index), luminosityString)
-        else:
-            if luminosityYear[-2:] == '12':
-                index = 1
-            else:
-                index = 0
-            latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*(0.8-0.1*index), luminosityLatexStrings[index])
-        # Draw the Atlas Label
-        ATLASLabel(self.titleOffset+0.13,0.875,'Work in Progress',1)
-
-    def setHistogram(self, histogram, rootFileNames):
-        files = [TFile(self.dir+rootFileNames[0]+'.root','read'),
-                 TFile(self.dir+rootFileNames[1]+'.root','read')]
-
-        for yearIndex, fileName in enumerate(rootFileNames):
-            for channelIndex, channel in enumerate(self.channels):
-                currentHistogramName = fileName+'_'+channel
-                currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit )
-
-                currentTree = files[yearIndex].Get(channel)
-                currentTree.Draw('m4l_constrained>>'+currentHistogramName, 'weight')
-
-                histogram.Add(currentHistogram)
-
-    def setHistogramJets(self, jetHistogram, rootFileNames):
-        jetFile = TFile("C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/redBkg_smoothed.root", "read")
-
-        eeHistogram = jetFile.Get('Reducible_bkg_1D_llee_0')
-        mmHistogram = jetFile.Get('Reducible_bkg_1D_llmumu_0')
-
-        normNumber = [[1.3,0.97,1.33,0.67],[0.13,0.52,0.107,0.52]]
-
-        testCanvas = TCanvas('test','test',0,0,1000,800)
-        testCanvas.Divide(4,2)
-
-        for yearIndex, fileName in enumerate(rootFileNames):
-            for channelIndex, channel in enumerate(self.channels):
-                testCanvas.cd(4*yearIndex+channelIndex+1)
-                print 4*yearIndex+channelIndex+1
-                currentHistogramName = fileName+'_'+channel
-                currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit)
-                for k in xrange(mmHistogram.GetNbinsX()):
-                    if channelIndex%2 == 0:
-                        currentHistogram.Fill(mmHistogram.GetBinCenter(k), mmHistogram.GetBinContent(k))
-                    else:
-                        currentHistogram.Fill(eeHistogram.GetBinCenter(k)+0.01, eeHistogram.GetBinContent(k))
-                currentHistogram.Draw()
-                currentHistogram.Scale(normNumber[yearIndex][channelIndex]/currentHistogram.Integral())
-                jetHistogram.Add(currentHistogram)
-        testCanvas.Update()
-        testCanvas.SaveAs('test.png')
-                        
-
-    def formatHistogram(self, histogram, color):
-        histogram.SetFillColor(color)
-        histogram.SetLineWidth(0)
-
-    def setMonteCarloStack(self, mcStack, mcList):
-        for histogram in mcList:
-            mcStack.Add(histogram)
-
-        mcStack.SetMaximum(self.maxY)
-
-    def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions):
+    def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions, saveFileName = False):
         combinedCanvas = TCanvas('combinedCanvas', 'combinedCanvas', 0, 0, 1000, 800)
         combinedCanvas.cd()
         
@@ -143,4 +59,114 @@ class PlotHiggs():
         ATLASLabel(self.titleOffset+0.13,0.875,'Work in Progress',1)
 
         combinedCanvas.Update()
-        combinedCanvas.SaveAs('test_run.png')
+        if saveFileName:
+            combinedCanvas.SaveAs(saveFileName+'.png')        
+        
+        
+    def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l', luminosityYear = False, saveFileName = False):
+        canvas = TCanvas('combinedCanvas', 'combinedCanvas', 0, 0, 1000, 800)
+        canvas.cd()
+        
+        # Draw the histogram with given option
+        histogram.Draw(option)
+        
+        # Add titles to the histogram axes
+        histogram.GetXaxis().SetTitle("m_{4l}[GeV]")
+        histogram.GetYaxis().SetTitle("Events/2.5GeV")
+
+        # Get the max y value on the graph
+        gPad.Update()
+        maxY = gPad.GetFrame().GetY2()
+
+        # Draw latex titles
+        latex = TLatex()
+        latex.SetTextAlign(12)
+        # Title designating the lepton channel
+        latex.SetTextSize(self.channelTextSize)
+        latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, maxY*0.85, "H #rightarrow ZZ^{(*)} #rightarrow 4l")
+        # Title(s) designating the year(s) (luminosity)
+        latex.SetTextSize(self.luminosityTextSize)
+        if not luminosityYear:
+            for index,luminosityString in enumerate(self.luminosityLatexStrings):
+                latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, maxY*(0.75-0.1*index), luminosityString)
+        else:
+            if luminosityYear[-2:] == '12': index = 1
+            else: index = 0
+            latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, maxY*(0.75), luminosityLatexStrings[index])
+        # Draw the Atlas Label
+        ATLASLabel(self.titleOffset+0.13,0.875,'Work in Progress',1)
+
+        canvas.Update()
+        if saveFileName:
+            canvas.SaveAs(saveFileName+'.png')
+        
+
+    def setHistogram(self, histogram, rootFileNames):
+        files = []
+        for yearIndex, fileName in enumerate(rootFileNames):
+            files.append(TFile(self.dir+fileName+'.root','read'))
+            for channelIndex, channel in enumerate(self.channels):
+                currentHistogramName = fileName+'_'+channel
+                currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit )
+
+                currentTree = files[yearIndex].Get(channel)
+                currentTree.Draw('m4l_constrained>>'+currentHistogramName, 'weight')
+
+                histogram.Add(currentHistogram)
+        histogram.SetMaximum(self.maxY)
+                
+
+    def setHistogramJets(self, jetHistogram, rootFileNames):
+        jetFile = TFile("C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/redBkg_smoothed.root", "read")
+
+        eeHistogram = jetFile.Get('Reducible_bkg_1D_llee_0')
+        mmHistogram = jetFile.Get('Reducible_bkg_1D_llmumu_0')
+
+        normNumber = [[1.3,0.97,1.33,0.67],[0.13,0.52,0.107,0.52]]
+
+        testCanvas = TCanvas('test','test',0,0,1000,800)
+        testCanvas.Divide(4,2)
+
+        for yearIndex, fileName in enumerate(rootFileNames):
+            for channelIndex, channel in enumerate(self.channels):
+                currentHistogramName = fileName+'_'+channel
+                currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit)
+                for k in xrange(mmHistogram.GetNbinsX()):
+                    if channelIndex%2 == 0:
+                        currentHistogram.Fill(mmHistogram.GetBinCenter(k), mmHistogram.GetBinContent(k))
+                    else:
+                        currentHistogram.Fill(eeHistogram.GetBinCenter(k)+0.01, eeHistogram.GetBinContent(k))
+                currentHistogram.Scale(normNumber[yearIndex][channelIndex]/currentHistogram.Integral())
+                jetHistogram.Add(currentHistogram)
+                        
+
+    def formatHistogram(self, histogram, color):
+        histogram.SetFillColor(color)
+        histogram.SetLineWidth(0)
+
+    def setMonteCarloStack(self, mcStack, mcList):
+        for histogram in mcList:
+            mcStack.Add(histogram)
+        mcStack.SetMaximum(self.maxY)
+
+
+class BackgroundFit:
+    def __call__(self, x, par):
+        return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]
+
+class LorentzianFit:
+    def __call__(self, x, par):
+        return (0.5*par[0]*par[1]/math.pi) / max(math.e**-10,(x[0]-par[2])*(x[0]-par[2])+0.25*par[1]*par[1])
+
+class HiggsFit:
+    def __call__(self, x, par):
+        return LorentzianFit()+BackgroundFit()
+
+##    def background(self, x, par):
+##        return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]
+##
+##    def lorentzianPeak(self, x, par):
+##        return (0.5*par[0]*par[1]/math.pi) / max(math.e**-10,(x[0]-par[2])*(x[0]-par[2])+0.25*par[1]*par[1])
+##
+##    def fitFunction(self, x, par):
+##        return self.background(x,par) + self.lorentzianPeak(x,par)

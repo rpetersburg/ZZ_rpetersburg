@@ -1,46 +1,43 @@
 from ROOT import *
-gROOT.LoadMacro('atlasstyle/AtlasStyle.C')
-gROOT.LoadMacro('atlasstyle/AtlasLabels.C')
+import math
 
-SetAtlasStyle()
+class Test:
+    def __call__(self,x,y):
+        return x,y
 
-nBins = 34
-lowerLimit = 80
-upperLimit = 250
-titleOffset = 0.05
-maxY = 35
+#Quadratic background function
+def background(x, par):
+  return par[0] + par[1]*x[0] + par[2]*x[0]*x[0];
 
-jetHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', nBins, lowerLimit, upperLimit)
 
-channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e']
+#Lorentzian Peak function
+def lorentzianPeak(x, par):
+  return (0.5*par[0]*par[1]/math.pi) / max(math.e**-10,(x[0]-par[2])*(x[0]-par[2])+ .25*par[1]*par[1])
 
-rootFileNames = ['out_redBkg_Comb','out_redBkg_Comb']
+#Sum of background and peak function
+def fitFunction(x, par):
+  return background(x,par) + lorentzianPeak(x,par[3:])
 
-jetFile = TFile("C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/redBkg_smoothed.root", "read")
 
-eeHistogram = jetFile.Get('Reducible_bkg_1D_llee_0')
-mmHistogram = jetFile.Get('Reducible_bkg_1D_llmumu_0')
+#bevington exercise by P. Malzacher, modified by R. Brun
+nBins = 60
+data = [ 6, 1,10,12, 6,13,23,22,15,21,
+23,26,36,25,27,35,40,44,66,81,
+75,57,48,45,46,41,35,36,53,32,
+40,37,38,31,36,44,42,37,32,32,
+43,44,35,33,33,39,29,41,32,44,
+26,39,29,35,32,21,21,15,25,15]
+histo = TH1F("example_9_1","Lorentzian Peak on Quadratic Background",60,0,3)
 
-normNumber = [[1.3,0.97,1.33,0.67],[0.13,0.52,0.107,0.52]]
+for i in xrange(nBins):
+  # we use these methods to explicitly set the content
+  # and error instead of using the fill method.
+  histo.SetBinContent(i+1,data[i])
+  histo.SetBinError(i+1,math.sqrt(data[i]))
 
-testCanvas = TCanvas('test','test',0,0,1000,800)
-testCanvas.Divide(4,2)
+# create a TF1 with the range from 0 to 3 and 6 parameters
+fitFcn = TF1("fitFcn",fitFunction,0,3,6)
 
-for yearIndex, fileName in enumerate(rootFileNames):
-    for channelIndex, channel in enumerate(channels):
-        testCanvas.cd(4*yearIndex+channelIndex+1)
-        currentHistogramName = fileName+'_'+channel
-        currentHistogram = TH1F( currentHistogramName, currentHistogramName, nBins, lowerLimit, upperLimit)
-        for k in xrange(mmHistogram.GetNbinsX()):
-            if channelIndex%2 == 0:
-                currentHistogram.Fill(mmHistogram.GetBinCenter(k), mmHistogram.GetBinContent(k))
-##                print mmHistogram.GetBinCenter(k), mmHistogram.GetBinContent(k)
-            else:
-                currentHistogram.Fill(eeHistogram.GetBinCenter(k)+0.01, eeHistogram.GetBinContent(k))
-        currentHistogram.Draw()
-        currentHistogram.Scale(normNumber[yearIndex][channelIndex]/currentHistogram.Integral())
-        print currentHistogram.Integral()
-        jetHistogram.Add(currentHistogram)
-testCanvas.Update()
-testCanvas.SaveAs('test.png')
-
+# first try without starting values for the parameters
+# this defaults to 1 for each param.
+histo.Fit("fitFcn");

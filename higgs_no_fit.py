@@ -29,4 +29,4 @@ histogramList = [dataHistogram, mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHis
 histogramNames = ['Experimental Data', 'MC Background Z+jets, t#bar{t}', 'MC Background ZZ^{(*)}', 'MC Signal (m_{H} = 125 GeV)']
 histogramOptions = ['pe','f','f','f']
 
-higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions)
+higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/HiggsNoFit')
