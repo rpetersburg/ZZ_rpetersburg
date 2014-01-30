@@ -22,8 +22,7 @@ class PlotHiggs():
         
         
         
-    def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l', channelTextSize = 0.0425,
-                      luminosityStringList = [], luminosityTextSize = 0.0325):
+    def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l', luminosityYear = ''):
         # Draw the histogram with given option
         histogram.Draw(option)
         
@@ -31,7 +30,29 @@ class PlotHiggs():
         histogram.GetXaxis().SetTitle("m_{4l}[GeV]")
         histogram.GetYaxis().SetTitle("Events/2.5GeV")
 
-##        self.drawLatex(leptonChannel, channelTextSize, luminosityStringList, luminosityTextSize, titleOffset)
+        # Get the max y value on the graph
+        gPad.Update()
+        maxY = gPad.GetFrame().GetY2()
+
+        # Draw latex titles
+        latex = TLatex()
+        latex.SetTextAlign(12)
+        # Title designating the lepton channel
+        latex.SetTextSize(self.channelTextSize)
+        latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*0.9, "H #rightarrow ZZ^{(*)} #rightarrow 4l")
+        # Title(s) designating the year(s) (luminosity)
+        latex.SetTextSize(self.luminosityTextSize)
+        if len(luminosityYear == 0):
+            for index,luminosityString in enumerate(self.luminosityLatexStrings):
+                latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*(0.8-0.1*index), luminosityString)
+        else:
+            if luminosityYear[-2:] == '12':
+                index = 1
+            else:
+                index = 0
+            latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*(0.8-0.1*index), luminosityLatexStrings[index])
+        # Draw the Atlas Label
+        ATLASLabel(self.titleOffset+0.13,0.875,'Work in Progress',1)
 
     def setHistogram(self, histogram, rootFileNames):
         files = [TFile(self.dir+rootFileNames[0]+'.root','read'),
@@ -123,39 +144,3 @@ class PlotHiggs():
 
         combinedCanvas.Update()
         combinedCanvas.SaveAs('test_run.png')
-
-    def run(self):
-        SetAtlasStyle()
-
-        histogramList = []
-        
-        dataFiles = ['data11','data12']
-        dataHistogram = TH1F( 'dataHistogram', 'Data Histogram', self.nBins, self.lowerLimit, self.upperLimit )
-        self.setHistogram(dataHistogram, dataFiles)
-
-        mcJetBkgFiles = ['out_redBkg_Comb','out_redBkg_Comb']
-        mcJetBkgHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', self.nBins, self.lowerLimit, self.upperLimit)
-        self.setHistogramJets(mcJetBkgHistogram, mcJetBkgFiles)
-        self.formatHistogram(mcJetBkgHistogram, kViolet)
-
-        mcZZBkgFiles = ['mc11_ZZComb','mc12_ZZComb']
-        mcZZBkgHistogram = TH1F( 'mcZZBkgHistogram', 'MC ZZ Background Histogram', self.nBins, self.lowerLimit, self.upperLimit)
-        self.setHistogram(mcZZBkgHistogram, mcZZBkgFiles)
-        self.formatHistogram(mcZZBkgHistogram, kRed)
-
-        mcSignalFiles = ['mc11_signalComb','mc12_signalComb']
-        mcSignalHistogram = TH1F( 'mcSignalHistogram', 'MC Signal Histogram', self.nBins, self.lowerLimit, self.upperLimit )
-        self.setHistogram(mcSignalHistogram, mcSignalFiles)
-        self.formatHistogram(mcSignalHistogram, kCyan)
-
-        histogramList = [dataHistogram, mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHistogram]
-        histogramNames = ['Experimental Data', 'MC Background Z+jets, t#bar{t}', 'MC Background ZZ^{(*)}', 'MC Signal (m_{H} = 125 GeV)']
-        histogramOptions = ['pe','f','f','f']
-
-        self.drawCombinedHistogram(histogramList,histogramNames, histogramOptions)
-
-
-SetAtlasStyle()
-if __name__ == '__main__':
-    app = PlotHiggs()
-    app.run()
