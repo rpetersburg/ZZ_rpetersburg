@@ -17,8 +17,8 @@ class PlotHiggs():
         self.channelTextSize = channelTextSize
         self.channelLatexString = ['4#mu','2#mu2e','2e2#mu','4e']
         self.luminosityTextSize = luminosityTextSize
-        self.luminosityLatexStrings = ["#sqrt{s} = 7 TeV: #intLdt = 4.5 fb^{-1}",
-                                      "#sqrt{s} = 8 TeV: #intLdt = 20.3 fb^{-1}"]
+        self.luminosityLatexStrings = ["#sqrt{s} = 7 TeV: #intLdt = 4.6 fb^{-1}",
+                                      "#sqrt{s} = 8 TeV: #intLdt = 20.7 fb^{-1}"]
         self.dir = 'C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/'
         self.channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e']
 
@@ -26,14 +26,16 @@ class PlotHiggs():
     def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions, saveFileName = False):
         combinedCanvas = TCanvas('combinedCanvas', 'combinedCanvas', 0, 0, 1000, 800)
         combinedCanvas.cd()
-        
+
+        # Create the stack of monte carlo data
         mcStack = THStack('mcStack','mcStack; m_{4l} [GeV]; Events/2.5GeV')
         self.setMonteCarloStack(mcStack, histogramList[1:])
-        
+
+        # Draw the stack and the experimental data
         mcStack.Draw()
         histogramList[0].Draw('Esame')
 
-        #Draw the legend
+        # Draw the legend
         legend = TLegend(0.7,0.75,0.9,0.9)
         for index, histogram in enumerate(histogramList):
             legend.AddEntry(histogram, histogramNames[index], histogramOptions[index])
@@ -63,7 +65,8 @@ class PlotHiggs():
             combinedCanvas.SaveAs(saveFileName+'.png')        
         
         
-    def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l', luminosityYear = False, saveFileName = False):
+    def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l',
+                      luminosityYear = False, saveFileName = False):
         canvas = TCanvas('combinedCanvas', 'combinedCanvas', 0, 0, 1000, 800)
         canvas.cd()
         
@@ -150,23 +153,18 @@ class PlotHiggs():
         mcStack.SetMaximum(self.maxY)
 
 
-class BackgroundFit:
-    def __call__(self, x, par):
-        return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]
+    def fitHistogram(self, histogram, combinedFit, parameters, fitFunctions = False):
+        if fitFunctions:
+            parameters = []
+            for func in fitFunctions:
+                # Set the parameters for each fit function
+                histogram.Fit(func, 'nr+')
+                # Extract the parameters from each fit function
+                for index in xrange(func.GetNumberFreeParameters()):
+                    parameters.append(func.GetParameters()[index])
 
-class LorentzianFit:
-    def __call__(self, x, par):
-        return (0.5*par[0]*par[1]/math.pi) / max(math.e**-10,(x[0]-par[2])*(x[0]-par[2])+0.25*par[1]*par[1])
-
-class HiggsFit:
-    def __call__(self, x, par):
-        return LorentzianFit()+BackgroundFit()
-
-##    def background(self, x, par):
-##        return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]
-##
-##    def lorentzianPeak(self, x, par):
-##        return (0.5*par[0]*par[1]/math.pi) / max(math.e**-10,(x[0]-par[2])*(x[0]-par[2])+0.25*par[1]*par[1])
-##
-##    def fitFunction(self, x, par):
-##        return self.background(x,par) + self.lorentzianPeak(x,par)
+        # Set the parameters for the combined function
+        for index, par in enumerate(parameters):
+            combinedFit.SetParameter(index,par)
+        print parameters
+        dataHistogram.Fit(combinedFit, 'r+', 'e')

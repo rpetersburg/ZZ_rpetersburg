@@ -3,7 +3,7 @@ gROOT.LoadMacro('atlasstyle/AtlasStyle.C')
 import PlotHiggs
 SetAtlasStyle()
 
-higgs = PlotHiggs.PlotHiggs(34, 80, 170, 0.05, 25)
+higgs = PlotHiggs.PlotHiggs(32, 80, 170, 0.05, 25)
 
 dataFiles = ['data11','data12']
 dataHistogram = TH1F( 'dataHistogram', 'Data Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
@@ -24,18 +24,15 @@ mcSignalHistogram = TH1F( 'mcSignalHistogram', 'MC Signal Histogram', higgs.nBin
 higgs.setHistogram(mcSignalHistogram, mcSignalFiles)
 higgs.formatHistogram(mcSignalHistogram, kCyan)
 
-# Create the fit functions
-fitHiggs = TF1('fitHiggs', 'gaus', 120, 130)
-fitZBkg = TF1('fitZBkg', 'gaus', 80, 100)
-fitOtherBkg = TF1('fitOtherBkg', 'gaus', higgs.lowerLimit, higgs.upperLimit)
-
 # Create a combined fit function
-fitAllData = TF1('fitAllData', 'gaus(0)+gaus(3)+gaus(6)', higgs.lowerLimit, higgs.upperLimit)
+combinedFit = TF1('fitAllData', 'gaus(0)+gaus(3)+gaus(6)', higgs.lowerLimit, higgs.upperLimit)
 
-higgs.fitHistogram(dataHistogram, fitAllData, [], [fitHiggs,fitZBkg,fitOtherBkg])
+higgs.fitHistogram(dataHistogram, combinedFit, [13, 125, 1.7, 12.05, 90.35, 2.4, 2.2, 137, 39])
+##higgs.fitHistogram(dataHistogram, combinedFit, [16.2, 124.4, 2.1, 13.3, 90.3, 2.7, 2.6, 120.4, 95.2])
+##higgs.fitHistogram(dataHistogram, combinedFit, [5,130,5])
 
 histogramList = [dataHistogram, mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHistogram]
 histogramNames = ['Experimental Data', 'MC Background Z+jets, t#bar{t}', 'MC Background ZZ^{(*)}', 'MC Signal (m_{H} = 125 GeV)']
 histogramOptions = ['pe','f','f','f']
 
-higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/HiggsWithFit')
+higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/HiggsWithFit2')
