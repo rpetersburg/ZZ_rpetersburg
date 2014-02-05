@@ -13,6 +13,7 @@ class PlotHiggs():
         self.upperLimit = upperLimit
         self.titleOffset = titleOffset
         self.maxY = maxY
+        self.binWidth = round(100*(self.upperLimit-self.lowerLimit)/self.nBins)/100
 
         self.channelTextSize = channelTextSize
         self.channelLatexString = ['4#mu','2#mu2e','2e2#mu','4e']
@@ -21,14 +22,19 @@ class PlotHiggs():
                                       "#sqrt{s} = 8 TeV: #intLdt = 20.7 fb^{-1}"]
         self.dir = 'C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/'
         self.channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e']
+        self.ggFChannels = ['tree_ggF_4mu', 'tree_ggF_2mu2e', 'tree_ggF_2e2mu', 'tree_ggF_4e']
+        self.axesLabel = '; m_{4l} [GeV]; Events/'+str(self.binWidth)+'GeV'
 
+        self.jetBkgNorm = 3.92
+        self.zzBkgNorm = 10.44
+        self.higgsNorm = 17.35
 
     def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions, saveFileName = False):
         combinedCanvas = TCanvas('combinedCanvas', 'combinedCanvas', 0, 0, 1000, 800)
         combinedCanvas.cd()
 
         # Create the stack of monte carlo data
-        mcStack = THStack('mcStack','mcStack; m_{4l} [GeV]; Events/2.5GeV')
+        mcStack = THStack('mcStack','mcStack'+self.axesLabel)
         self.setMonteCarloStack(mcStack, histogramList[1:])
 
         # Draw the stack and the experimental data
@@ -104,7 +110,7 @@ class PlotHiggs():
             canvas.SaveAs(saveFileName+'.png')
         
 
-    def setHistogram(self, histogram, rootFileNames):
+    def setHistogram(self, histogram, rootFileNames, dataBranch = 'm4l_constrained', weightBranch = 'weight'):
         files = []
         for yearIndex, fileName in enumerate(rootFileNames):
             files.append(TFile(self.dir+fileName+'.root','read'))
@@ -113,10 +119,13 @@ class PlotHiggs():
                 currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit )
 
                 currentTree = files[yearIndex].Get(channel)
-                currentTree.Draw('m4l_constrained>>'+currentHistogramName, 'weight')
+                currentTree.Draw(dataBranch+'>>'+currentHistogramName, weightBranch, 'n')
 
                 histogram.Add(currentHistogram)
         histogram.SetMaximum(self.maxY)
+
+    def setSpinHistogram(self, histogram, rootFileNames):
+        pass
                 
 
     def setHistogramJets(self, jetHistogram, rootFileNames):

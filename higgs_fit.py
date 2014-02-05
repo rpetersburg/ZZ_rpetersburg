@@ -3,7 +3,10 @@ gROOT.LoadMacro('atlasstyle/AtlasStyle.C')
 import PlotHiggs
 SetAtlasStyle()
 
-higgs = PlotHiggs.PlotHiggs(34, 80, 170, 0.05, 25)
+deadCanvas = TCanvas('','',0,0,0,0)
+deadCanvas.cd()
+
+higgs = PlotHiggs.PlotHiggs(36, 80, 170, 0.05, 25)
 
 dataFiles = ['data11','data12']
 dataHistogram = TH1F( 'dataHistogram', 'Data Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
@@ -39,3 +42,5 @@ histogramNames = ['Experimental Data', 'MC Background Z+jets, t#bar{t}', 'MC Bac
 histogramOptions = ['pe','f','f','f']
 
 higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/HiggsWithFit')
+
+deadCanvas.Close()
