@@ -4,7 +4,6 @@ import PlotHiggs
 SetAtlasStyle()
 
 deadCanvas = TCanvas('','',0,0,0,0)
-deadCanvas.cd()
 
 higgs = PlotHiggs.PlotHiggs(36, 80, 170, 0.05, 25)
 
@@ -13,12 +12,12 @@ dataHistogram = TH1F( 'dataHistogram', 'Data Histogram', higgs.nBins, higgs.lowe
 higgs.setHistogram(dataHistogram, dataFiles)
 
 mcJetBkgFiles = ['out_redBkg_Comb','out_redBkg_Comb']
-mcJetBkgHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)
+mcJetBkgHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
 higgs.setHistogramJets(mcJetBkgHistogram, mcJetBkgFiles)
 higgs.formatHistogram(mcJetBkgHistogram, kViolet)
 
 mcZZBkgFiles = ['mc11_ZZComb','mc12_ZZComb']
-mcZZBkgHistogram = TH1F( 'mcZZBkgHistogram', 'MC ZZ Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)
+mcZZBkgHistogram = TH1F( 'mcZZBkgHistogram', 'MC ZZ Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
 higgs.setHistogram(mcZZBkgHistogram, mcZZBkgFiles)
 higgs.formatHistogram(mcZZBkgHistogram, kRed)
 
@@ -41,6 +40,13 @@ histogramList = [dataHistogram, mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHis
 histogramNames = ['Experimental Data', 'MC Background Z+jets, t#bar{t}', 'MC Background ZZ^{(*)}', 'MC Signal (m_{H} = 125 GeV)']
 histogramOptions = ['pe','f','f','f']
 
-higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/HiggsWithFit')
+higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/HiggsWithFit', higgs.axesLabel)
 
-deadCanvas.Close()
+# Print all relevant data from fit function
+fitAllData.SetParNames('Higgs Amplitude', 'Higgs Mass', 'Higgs #sigma', 'Z Amplitude', 'Z Mass', 'Z #sigma', 'Bkg Amplitude', 'Bkg Mass', 'Bkg #sigma')
+for i in xrange(9):
+    print str(fitAllData.GetParName(i)) + ':   ' + str(fitAllData.GetParameter(i))
+
+
+
+
