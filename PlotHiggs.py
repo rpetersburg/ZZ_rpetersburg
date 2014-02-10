@@ -53,10 +53,6 @@ class PlotHiggs():
         legend.SetBorderSize(0)
         legend.Draw()
         
-        # Get the max y value on the graph
-        gPad.Update()
-        maxY = gPad.GetFrame().GetY2()
-        
         # Draw latex titles
         latex = TLatex()
         latex.SetTextAlign(12)
@@ -84,10 +80,13 @@ class PlotHiggs():
         histogram.Draw(option)
 
         histogram.SetTitle(histogram.GetTitle()+axesLabel)
-        
-##        # Add titles to the histogram axes
-##        histogram.GetXaxis().SetTitle("m_{4l}[GeV]")
-##        histogram.GetYaxis().SetTitle("Events/2.5GeV")
+
+        # Draw the legend
+        legend = TLegend(0.7,0.85,0.9,0.9)
+        legend.AddEntry(histogram, histogram.GetName(), option)
+        legend.SetFillColor(0)
+        legend.SetBorderSize(0)
+        legend.Draw()
 
         # Get the max y value on the graph
         gPad.Update()
@@ -114,20 +113,27 @@ class PlotHiggs():
         canvas.Update()
         if saveFileName:
             canvas.SaveAs(saveFileName+'.png')
-        
 
-    def setHistogram(self, histogram, rootFileNames, dataBranch = 'm4l_constrained', weightBranch = 'weight'):
+
+    def setHistogram(self, histogram, rootFileNames, dataBranch = 'm4l_constrained', weightBranch = 'weight', channels = [], scale = []):
+        if not channels:
+            channels = self.channels
         files = []
         for yearIndex, fileName in enumerate(rootFileNames):
             files.append(TFile(self.dir+fileName+'.root','read'))
-            for channelIndex, channel in enumerate(self.channels):
-                currentHistogramName = fileName+'_'+channel
+            for channelIndex, channel in enumerate(channels):
+                currentHistogramName = fileName[-16:]+'_'+channel
+                print 'Setting Histogram: ' + currentHistogramName
                 currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit )
-
+                
                 currentTree = files[yearIndex].Get(channel)
                 currentTree.Draw(dataBranch+'>>'+currentHistogramName, weightBranch, 'n')
-
+                if scale:
+                    currentHistogram.Scale(scale[yearIndex][channelIndex]/currentHistogram.Integral())                    
+                
                 histogram.Add(currentHistogram)
+                
+            
         histogram.SetMaximum(self.maxY)
 
     def setHistogramWithChain(self, histogram, rootFileNames, dataBranch = 'm4l_constained', weightBranch = 'weight'):
@@ -159,19 +165,21 @@ class PlotHiggs():
                 currentHistogramName = fileName+'_'+channel
                 currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit)
                 if channelIndex%2 == 0:
-                    for k in xrange(mmHistogram.GetNbinsX()):
-                        currentHistogram.Fill(mmHistogram.GetBinCenter(k), mmHistogram.GetBinContent(k))
+                    for bn in xrange(mmHistogram.GetNbinsX()):
+                        currentHistogram.Fill(mmHistogram.GetBinCenter(bn), mmHistogram.GetBinContent(bn))
                 else:
-                    for k in xrange(mmHistogram.GetNbinsX()):
-                        currentHistogram.Fill(eeHistogram.GetBinCenter(k)+0.01, eeHistogram.GetBinContent(k))
-                currentHistogram.Scale(normNumber[yearIndex][channelIndex]/currentHistogram.Integral())
-                jetHistogram.Add(currentHistogram)              
+                    for bn in xrange(mmHistogram.GetNbinsX()):
+                        currentHistogram.Fill(eeHistogram.GetBinCenter(bn)+0.01, eeHistogram.GetBinContent(bn))
+##                currentHistogram.Scale(normNumber[yearIndex][channelIndex]/currentHistogram.Integral())
+                jetHistogram.Add(currentHistogram)
+        jetHistogram.SetMaximum(self.maxY)
 
     def formatHistogram(self, histogram, color, scaleFactor = 0, lineWidth = 0):
         histogram.SetFillColor(color)
         if scaleFactor:
             histogram.Scale(scaleFactor/histogram.Integral())
         histogram.SetLineWidth(0)
+        histogram.SetMaximum(self.maxY)
 
 
     def setMonteCarloStack(self, mcStack, mcList):

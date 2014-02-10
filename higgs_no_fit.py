@@ -11,10 +11,12 @@ dataFiles = ['data11','data12']
 dataHistogram = TH1F( 'dataHistogram', 'Data Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
 higgs.setHistogram(dataHistogram, dataFiles)
 
-mcJetBkgFiles = ['out_redBkg_Comb','out_redBkg_Comb']
+mcJetBkgFiles = ['extraFiles/MC11c/ZPlusJetsForShapes/reduxbkg_tree_v2',
+                 'extraFiles/MC12a/ZPlusJetsForShapes/reduxbkg_tree_v2']
+##mcJetBkgFiles = ['out_redBkg_Comb','out_redBkg_Comb']
 mcJetBkgHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)
-higgs.setHistogramJets(mcJetBkgHistogram, mcJetBkgFiles)
-higgs.formatHistogram(mcJetBkgHistogram, kViolet)
+higgs.setHistogram(mcJetBkgHistogram, mcJetBkgFiles, 'm4l_constrained', 'weight', ['tree'], [[0.22+0.03,0.19,0.03,2.8,2.5],[2.4+0.14,2.5+0.1,5.2,3.2]])
+higgs.formatHistogram(mcJetBkgHistogram, kViolet, higgs.jetBkgNorm)
 
 mcZZBkgFiles = ['mc11_ZZComb','mc12_ZZComb']
 mcZZBkgHistogram = TH1F( 'mcZZBkgHistogram', 'MC ZZ Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)

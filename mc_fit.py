@@ -27,7 +27,7 @@ histogramList = [mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHistogram]
 mcHistogram = TH1F( 'mcHistogram', 'MC Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
 higgs.combineHistograms(mcHistogram, histogramList)
 
-fitHiggs = TF1('fitHighMass', 'gaus', 120,130)
+fitHighMass = TF1('fitHighMass', 'gaus', 120,130)
 fitLowMass = TF1('fitLowMass', 'gaus', 80, 100)
 fitOtherBkg = TF1('fitOtherBkg', 'gaus', higgs.lowerLimit, higgs.upperLimit)
 
@@ -35,5 +35,15 @@ fitMC = TF1('fitMC', 'gaus(0)+gaus(3)+gaus(6)', higgs.lowerLimit, higgs.upperLim
 
 higgs.fitHistogram(mcHistogram, fitMC, [], [fitHighMass, fitLowMass])
 
-higgs.drawHistogram(mcHistogram, 'e', '4l', False, 'combinedGraphs/mcHistogram', higgs.axesLabel)
+higgs.drawHistogram(mcHistogram, 'e', '4l', '', 'combinedGraphs/mcHistogram', higgs.axesLabel)
+
+# Print all relevant data from fit function
+fitMC.SetParNames('Higgs Amplitude', 'Higgs Mass', 'Higgs #sigma', 'Z Amplitude', 'Z Mass', 'Z #sigma', 'Bkg Amplitude', 'Bkg Mass', 'Bkg #sigma')
+for i in xrange(9):
+    print str(fitMC.GetParName(i)) + ':   ' + str(fitMC.GetParameter(i))
+
+
+
+
+
 

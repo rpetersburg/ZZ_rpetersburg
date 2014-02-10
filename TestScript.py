@@ -1,31 +1,24 @@
 from ROOT import *
 gROOT.LoadMacro('atlasstyle/AtlasStyle.C')
 gROOT.LoadMacro('atlasstyle/AtlasLabels.C')
-##SetAtlasStyle()
+import PlotHiggs
+SetAtlasStyle()
 
-channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e']
+deadCanvas = TCanvas('','',0,0,0,0)
 
-##h1 = TH1F('h1', 'h1', 20, -4, 4)
+higgs = PlotHiggs.PlotHiggs(36, 80, 170, 0.05, 1000)
 
-h2 = TH1F('h2', 'h2', 20, -4, 4)
+mcJetBkgFiles = ['extraFiles/MC11c/ZPlusJetsForShapes/reduxbkg_tree_v2',
+                 'extraFiles/MC12a/ZPlusJetsForShapes/reduxbkg_tree_v2']
+##mcJetBkgFiles = ['data11', 'data12']
+mcJetBkgHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
+higgs.setHistogram(mcJetBkgHistogram, mcJetBkgFiles, 'm4l_constrained', 'weight', ['tree'])
+higgs.formatHistogram(mcJetBkgHistogram, kViolet)
 
-f1 = TFile('C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/data12.root','read')
+higgs.drawHistogram(mcJetBkgHistogram, 'e')
 
-for channelIndex, channel in enumerate(channels):
-    h1 = TH1F('h1'+channel, 'h1', 20, -4, 4)
-    t1 = f1.Get(channel)
-    t1.Draw('phi>>h1'+channel, 'abs(weight)*(m4l_constrained<130 && m4l_constrained>115)')
-    h2.Add(h1)
-
-c2 = TCanvas('c2', 'c2', 0, 0, 1000, 800)
-c2.cd()
-
-h2.Draw()
-
-
-##c1 = TCanvas('c1', 'c1', 0,0,1000, 800)
-##c1.cd()
 ##
-##h1.Draw('e')
-##
-##c1.Update()
+##f = TFile(higgs.dir+mcJetBkgFiles[1]+'.root', 'read')
+##h = TH1F('h', 'h', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)
+##t = f.Get('tree')
+##t.Draw('m4l_constrained>>h', 'weight')
