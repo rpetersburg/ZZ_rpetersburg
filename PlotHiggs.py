@@ -23,6 +23,7 @@ class PlotHiggs():
         self.dir = 'C:/Users/ryanrp/Documents/CERN/analysis/ZZ_rpetersburg/rootFiles/'
         self.channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e']
         self.ggFChannels = ['tree_ggF_4mu', 'tree_ggF_2mu2e', 'tree_ggF_2e2mu', 'tree_ggF_4e']
+        
         self.axesLabel = '; m_{4l} [GeV]; Events/'+str(self.binWidth)+'GeV'
         self.phiLabel = '; #Phi; Entries'
         self.cosThetaLabel = '; Cos(#theta_{1}); Entries'

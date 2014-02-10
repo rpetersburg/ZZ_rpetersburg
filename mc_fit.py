@@ -35,5 +35,5 @@ fitMC = TF1('fitMC', 'gaus(0)+gaus(3)+gaus(6)', higgs.lowerLimit, higgs.upperLim
 
 higgs.fitHistogram(mcHistogram, fitMC, [], [fitHighMass, fitLowMass])
 
-higgs.drawHistogram(mcHistogram, 'e', '4l', False, 'combinedGraphs/mcHistogram')
+higgs.drawHistogram(mcHistogram, 'e', '4l', False, 'combinedGraphs/mcHistogram', higgs.axesLabel)
 
