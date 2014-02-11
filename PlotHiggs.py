@@ -32,8 +32,11 @@ class PlotHiggs():
         self.zzBkgNorm = 10.44
         self.higgsNorm = 17.35
 
-    def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions, saveFileName = '', axesLabel = ''):
-        combinedCanvas = TCanvas('combinedCanvas', 'combinedCanvas'+axesLabel, 0, 0, 1000, 800)
+        self.combinedCanvasNum = 0
+
+    def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions, saveFileName = '', axesLabel = '', fitFunction = None):
+        combinedCanvas = TCanvas('combinedCanvas'+str(self.combinedCanvasNum), 'combinedCanvas'+axesLabel, 0, 0, 1000, 800)
+        self.combinedCanvasNum += 1
         combinedCanvas.cd()
 
         # Create the stack of monte carlo data
@@ -44,6 +47,9 @@ class PlotHiggs():
         mcStack.Draw()
         histogramList[0].SetTitle(histogramList[0].GetTitle()+axesLabel)
         histogramList[0].Draw('Esame')
+        if fitFunction:
+            print 'Drawing'
+            fitFunction.Draw('same')
 
         # Draw the legend
         legend = TLegend(0.7,0.75,0.9,0.9)
@@ -72,12 +78,15 @@ class PlotHiggs():
         
         
     def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l',
-                      luminosityYear = '', saveFileName = '', axesLabel = ''):
-        canvas = TCanvas('combinedCanvas', 'combinedCanvas', 0, 0, 1000, 800)
+                      luminosityYear = '', saveFileName = '', axesLabel = '', fitFunction = None):
+        canvas = TCanvas('combinedCanvas'+str(self.combinedCanvasNum), 'combinedCanvas'+axesLabel, 0, 0, 1000, 800)
+        self.combinedCanvasNum += 1
         canvas.cd()
         
         # Draw the histogram with given option
         histogram.Draw(option)
+        if fitFunction:
+            fitFunction.Draw('same')
 
         histogram.SetTitle(histogram.GetTitle()+axesLabel)
 
@@ -123,7 +132,6 @@ class PlotHiggs():
             files.append(TFile(self.dir+fileName+'.root','read'))
             for channelIndex, channel in enumerate(channels):
                 currentHistogramName = fileName[-16:]+'_'+channel
-                print 'Setting Histogram: ' + currentHistogramName
                 currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit )
                 
                 currentTree = files[yearIndex].Get(channel)
@@ -144,9 +152,9 @@ class PlotHiggs():
         chain.Draw(dataBranch+'>>'+histogram.GetName(),weightBranch)
         histogram.SetMaximum(self.maxY)
 
-    def combineHistograms(self, combinedHistogram, histogramList, multiplier = 1):
-        for histogram in histogramList:
-            combinedHistogram.Add(histogram, multiplier)
+    def combineHistograms(self, combinedHistogram, histogramList, multiplier = [1,1,1,1,1]):
+        for index, histogram in enumerate(histogramList):
+            combinedHistogram.Add(histogram, multiplier[index])
         combinedHistogram.SetMaximum(self.maxY)            
 
     def setHistogramJets(self, jetHistogram, rootFileNames):
@@ -187,7 +195,7 @@ class PlotHiggs():
             mcStack.Add(histogram)
         mcStack.SetMaximum(self.maxY)
 
-    def fitHistogram(self, histogram, combinedFit, parameters, fitFunctions = []):
+    def fitHistogram(self, histogram, combinedFit, parameters = [], fitFunctions = [], fittedFunctions = []):
         if fitFunctions:
             parameters = []
             for func in fitFunctions:
@@ -195,9 +203,17 @@ class PlotHiggs():
                 histogram.Fit(func, 'nr+')
                 # Extract the parameters from each fit function
                 for index in xrange(func.GetNumberFreeParameters()):
-                    parameters.append(func.GetParameters()[index])
+                    parameters.append(func.GetParameter(index))
+
+        if fittedFunctions:
+            parameters = []
+            for func in fittedFunctions:
+                for index in xrange(func.GetNumberFreeParameters()):
+                    parameters.append(func.GetParameter(index))
 
         # Set the parameters for the combined function
         for index, par in enumerate(parameters):
             combinedFit.SetParameter(index,par)
-        histogram.Fit(combinedFit, 'r+', 'e')
+
+        if not fittedFunctions:
+            histogram.Fit(combinedFit, 'nr+')
