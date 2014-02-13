@@ -1,6 +1,7 @@
 from ROOT import *
 gROOT.LoadMacro('atlasstyle/AtlasStyle.C')
 import PlotHiggs
+import math
 SetAtlasStyle()
 
 deadCanvas = TCanvas('','',0,0,0,0)
@@ -11,10 +12,6 @@ dataFiles = ['data11','data12']
 dataHistogram = TH1F( 'dataHistogram', 'Data Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
 higgs.setHistogram(dataHistogram, dataFiles)
 
-##mcJetBkgFiles = ['out_redBkg_Comb','out_redBkg_Comb']
-##mcJetBkgHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
-##higgs.setHistogramJets(mcJetBkgHistogram, mcJetBkgFiles)
-##higgs.formatHistogram(mcJetBkgHistogram, kViolet)
 mcJetBkgFiles = ['extraFiles/MC11c/ZPlusJetsForShapes/reduxbkg_tree_v2',
                  'extraFiles/MC12a/ZPlusJetsForShapes/reduxbkg_tree_v2']
 mcJetBkgHistogram = TH1F( 'mcJetBkgHistogram', 'MC Jet Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)
@@ -40,27 +37,23 @@ higgs.combineHistograms(dataZZBkgHistogram, [dataHistogram, mcSignalHistogram, m
 dataJetBkgHistogram = TH1F( 'dataJetBkgHistogram', 'Data Jet Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)
 higgs.combineHistograms(dataJetBkgHistogram, [dataHistogram, mcSignalHistogram, mcZZBkgHistogram], [1,-1,-1])
 
+mcBkgHistogram = TH1F( 'mcBkgHistogram', 'MC Background Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit)
+higgs.combineHistograms(mcBkgHistogram, [mcZZBkgHistogram, mcJetBkgHistogram], [1,1])
+
 # Fitting the experimental data
 
 # Create the fit functions
 fitHiggs = TF1('fitHiggs', 'gaus', 120, 130)
-fitZBkg = TF1('fitZBkg', 'gaus(0)+pol3(3)', higgs.lowerLimit, higgs.upperLimit)
-fitZMass = TF1('fitZMass', 'gaus', higgs.lowerLimit, 106)
-fitZOtherBkg = TF1('fitZOtherBkg', 'pol3', 106, higgs.upperLimit)
-fitJetBkg = TF1('fitJetBkg', 'pol3', higgs.lowerLimit, higgs.upperLimit)
+fitZMass = TF1('fitZMass', 'gaus', 80, 106)
+fitOtherBkg = TF1('fitOtherBkg', 'gaus', 106, higgs.upperLimit)
 # Create a combined fit function
-fitAllData = TF1('fitAllData', 'gaus(0)+gaus(3)+pol3(6)+pol3(10)', higgs.lowerLimit, higgs.upperLimit)
+fitAllData = TF1('fitAllData', 'gaus(0)+gaus(3)+gaus(6)', higgs.lowerLimit, higgs.upperLimit)
 
-higgs.fitHistogram(dataSignalHistogram, fitHiggs, [])
-higgs.drawHistogram(dataSignalHistogram, 'e', '4l', '', 'combinedGraphs/dataSignalHistogram', higgs.axesLabel, fitHiggs)
+higgs.fitHistogram(dataHistogram, fitAllData, [], [fitHiggs,fitZMass,fitOtherBkg])
 
-higgs.fitHistogram(dataZZBkgHistogram, fitZBkg, [], [fitZMass, fitZOtherBkg])
-higgs.drawHistogram(dataZZBkgHistogram, 'e', '4l', '', 'combinedGraphs/dataZZBkgHistogram', higgs.axesLabel, fitZBkg)
-
-higgs.fitHistogram(dataJetBkgHistogram, fitJetBkg, [])
-higgs.drawHistogram(dataJetBkgHistogram, 'e', '4l', '', 'combinedGraphs/dataJetBkgHistogram', higgs.axesLabel, fitJetBkg)
-
-higgs.fitHistogram(dataHistogram, fitAllData, [], [], [fitHiggs,fitZBkg,fitJetBkg])
+higgs.drawHistogram(dataHistogram, 'e', '4l', '', 'fitGraphs/fitHiggs', higgs.axesLabel, fitHiggs)
+higgs.drawHistogram(dataHistogram, 'e', '4l', '', 'fitGraphs/fitZMass', higgs.axesLabel, fitZMass)
+higgs.drawHistogram(dataHistogram, 'e', '4l', '', 'fitGraphs/fitOtherBkg', higgs.axesLabel, fitOtherBkg)
 
 histogramList = [dataHistogram, mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHistogram]
 histogramNames = ['Experimental Data', 'MC Background Z+jets, t#bar{t}', 'MC Background ZZ^{(*)}', 'MC Signal (m_{H} = 125 GeV)']
@@ -69,46 +62,60 @@ histogramOptions = ['pe','f','f','f']
 higgs.drawCombinedHistogram(histogramList, histogramNames, histogramOptions, 'combinedGraphs/HiggsWithFit', higgs.axesLabel, fitAllData)
 
 # Print all relevant data from fit function
-parameterNames = ['Higgs Amplitude', 'Higgs Mass', 'Higgs #sigma', 'Z Amplitude', 'Z Mass', 'Z #sigma', 'Z Bkg Amplitude', 'Z Bkg Mass', 'Z Bkg #sigma']
-for index in xrange(9):
+parameterNames = ['Higgs Amplitude', 'Higgs Mass', 'Higgs #sigma', 'Z Amplitude', 'Z Mass', 'Z #sigma']
+for index in xrange(6):
     fitAllData.SetParName(index, parameterNames[index])
 print 'Experimental Data Fit Results'
-for i in xrange(9):
-    print str(fitAllData.GetParName(i)) + ':   ' + str(fitAllData.GetParameter(i))
+for i in xrange(6):
+    print str(fitAllData.GetParName(i)) + ':   ' + str(round(10*fitAllData.GetParameter(i))/10)
 
 
 # Fitting the simulated data
 
 # Create the fit functions
 fitMCSignal = TF1('fitMCSignal', 'gaus', 120, 130)
-fitMCZBkg = TF1('fitMCZBkg', 'gaus(0)+pol3(3)', higgs.lowerLimit, higgs.upperLimit)
 fitMCZMass = TF1('fitMCZMass', 'gaus', higgs.lowerLimit, 106)
-fitMCZOtherBkg = TF1('fitMCZOtherBkg', 'pol3', 106, higgs.upperLimit)
-fitMCJetBkg = TF1('fitMCJetBkg', 'pol3', higgs.lowerLimit, higgs.upperLimit)
+fitMCOtherBkg = TF1('fitMCOtherBkg', 'gaus', 106, higgs.upperLimit)
 # Combined
-fitMC = TF1('fitMC', 'gaus(0)+gaus(3)+pol3(6)+pol3(10)', higgs.lowerLimit, higgs.upperLimit)
+fitMC = TF1('fitMC', 'gaus(0)+gaus(3)+gaus(6)', higgs.lowerLimit, higgs.upperLimit)
 
-higgs.fitHistogram(mcSignalHistogram, fitMCSignal, [])
-higgs.drawHistogram(mcSignalHistogram, 'e', '4l', '', 'combinedGraphs/mcSignalHistogram', higgs.axesLabel, fitMCSignal)
+higgs.fitHistogram(mcSignalHistogram, fitMCSignal)
+higgs.drawHistogram(mcSignalHistogram, 'e', '4l', '', 'fitGraphs/fitMCSignal', higgs.axesLabel, fitMCSignal)
 
-higgs.fitHistogram(mcZZBkgHistogram, fitMCZBkg, [], [fitMCZMass, fitMCZOtherBkg])
-higgs.drawHistogram(mcZZBkgHistogram, 'e', '4l', '', 'combinedGraphs/mcZZBkgHistogram', higgs.axesLabel, fitMCZBkg)
+higgs.fitHistogram(mcZZBkgHistogram, fitMCZMass)
+higgs.drawHistogram(mcZZBkgHistogram, 'e', '4l', '', 'fitGraphs/fitMCZMass', higgs.axesLabel, fitMCZMass)
 
-higgs.fitHistogram(mcJetBkgHistogram, fitMCJetBkg, [])
-higgs.drawHistogram(mcJetBkgHistogram, 'e', '4l', '', 'combinedGraphs/mcJetBkgHistogram', higgs.axesLabel, fitMCJetBkg)
+higgs.fitHistogram(mcBkgHistogram, fitMCOtherBkg)
+higgs.drawHistogram(mcBkgHistogram, 'e', '4l', '', 'fitGraphs/fitMCOtherBkg', higgs.axesLabel, fitMCOtherBkg)
 
 mcHistogram = TH1F( 'mcHistogram', 'MC Histogram', higgs.nBins, higgs.lowerLimit, higgs.upperLimit )
 higgs.combineHistograms(mcHistogram, [mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHistogram])
-higgs.fitHistogram(mcHistogram, fitMC, [], [], [fitMCSignal, fitMCZBkg, fitMCJetBkg])
+higgs.fitHistogram(mcHistogram, fitMC, [], [fitMCSignal, fitMCZMass, fitMCOtherBkg])
 higgs.drawHistogram(mcHistogram, 'e', '4l', '', 'combinedGraphs/mcHistogram', higgs.axesLabel, fitMC)
 
 # Print all relevant data from fit function
-parameterNames = ['Higgs Amplitude', 'Higgs Mass', 'Higgs #sigma', 'Z Amplitude', 'Z Mass', 'Z #sigma', 'Z Bkg Amplitude', 'Z Bkg Mass', 'Z Bkg #sigma']
-for index in xrange(9):
+parameterNames = ['Higgs Amplitude', 'Higgs Mass', 'Higgs #sigma', 'Z Amplitude', 'Z Mass', 'Z #sigma']
+for index in xrange(6):
     fitMC.SetParName(index, parameterNames[index])
 print '\nSimulation Data Fit Results'
-for i in xrange(9):
-    print str(fitMC.GetParName(i)) + ':   ' + str(fitMC.GetParameter(i))
+for i in xrange(6):
+    print str(fitMC.GetParName(i)) + ':   ' + str(round(10*fitMC.GetParameter(i))/10)
+
+
+
+simulationHiggsMass = round(10*fitMC.GetParameter(1))/10
+simulationHiggsError = round(10*fitMC.GetParameter(2)/math.sqrt(28))/10
+
+experimentalHiggsMass = math.ceil(10*fitAllData.GetParameter(1))/10
+experimentalHiggsError = math.ceil(10*fitAllData.GetParameter(2)/math.sqrt(32))/10
+
+print
+print 'Experimental Higgs Mass:', str(experimentalHiggsMass), u'\u00B1', str(experimentalHiggsError), 'GeV'
+print 'Simulation Higgs Mass:', str(simulationHiggsMass), u'\u00B1', str(simulationHiggsError), 'GeV'
+
+
+
+
 
 
 

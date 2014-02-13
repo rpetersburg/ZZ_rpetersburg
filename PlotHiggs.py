@@ -48,7 +48,6 @@ class PlotHiggs():
         histogramList[0].SetTitle(histogramList[0].GetTitle()+axesLabel)
         histogramList[0].Draw('Esame')
         if fitFunction:
-            print 'Drawing'
             fitFunction.Draw('same')
 
         # Draw the legend
@@ -74,7 +73,8 @@ class PlotHiggs():
 
         combinedCanvas.Update()
         if saveFileName:
-            combinedCanvas.SaveAs(saveFileName+'.png')        
+            combinedCanvas.SaveAs(saveFileName+'.png')
+            combinedCanvas.Close()
         
         
     def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l',
@@ -122,6 +122,7 @@ class PlotHiggs():
         canvas.Update()
         if saveFileName:
             canvas.SaveAs(saveFileName+'.png')
+            canvas.Close()
 
 
     def setHistogram(self, histogram, rootFileNames, dataBranch = 'm4l_constrained', weightBranch = 'weight', channels = [], scale = []):
