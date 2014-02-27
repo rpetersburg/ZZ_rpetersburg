@@ -25,7 +25,8 @@ class PlotHiggs():
         self.ggFChannels = ['tree_ggF_4mu', 'tree_ggF_2mu2e', 'tree_ggF_2e2mu', 'tree_ggF_4e']
         
         self.axesLabel = '; m_{4l} [GeV]; Events/'+str(self.binWidth)+'GeV'
-        self.phiLabel = '; #Phi; Entries'
+        self.m34Label = '; m_{34} [GeV]; Events/'+str(self.binWidth)+'GeV'
+        self.phiLabel = '; #phi; Entries'
         self.cosThetaLabel = '; Cos(#theta_{1}); Entries'
 
         self.jetBkgNorm = 3.92
@@ -33,9 +34,12 @@ class PlotHiggs():
         self.higgsNorm = 17.35
 
         self.combinedCanvasNum = 0
+        self.sameHistNameNum = 1
 
-    def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions, saveFileName = '', axesLabel = '', fitFunction = None):
-        combinedCanvas = TCanvas('combinedCanvas'+str(self.combinedCanvasNum), 'combinedCanvas'+axesLabel, 0, 0, 1000, 800)
+    def drawCombinedHistogram(self, histogramList, histogramNames, histogramOptions,
+                              saveFileName = '', axesLabel = '', fitFunction = None):
+        combinedCanvas = TCanvas('combinedCanvas'+str(self.combinedCanvasNum),
+                                 'combinedCanvas'+axesLabel, 0, 0, 1000, 800)
         self.combinedCanvasNum += 1
         combinedCanvas.cd()
 
@@ -43,7 +47,7 @@ class PlotHiggs():
         mcStack = THStack('mcStack','mcStack'+axesLabel)
         self.setMonteCarloStack(mcStack, histogramList[1:])
 
-        # Draw the stack and the experimental data
+        # Draw the stack, experimental data, and possible fit function
         mcStack.Draw()
         histogramList[0].SetTitle(histogramList[0].GetTitle()+axesLabel)
         histogramList[0].Draw('Esame')
@@ -51,7 +55,7 @@ class PlotHiggs():
             fitFunction.Draw('same')
 
         # Draw the legend
-        legend = TLegend(0.7,0.75,0.9,0.9)
+        legend = TLegend(0.6,0.65,0.9,0.9)
         for index, histogram in enumerate(histogramList):
             legend.AddEntry(histogram, histogramNames[index], histogramOptions[index])
         legend.SetFillColor(0)
@@ -63,11 +67,13 @@ class PlotHiggs():
         latex.SetTextAlign(12)
         # Title designating the lepton channel
         latex.SetTextSize(self.channelTextSize)
-        latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*0.9, "H #rightarrow ZZ^{(*)} #rightarrow 4l")
+        latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit,
+                        self.maxY*0.9, "H #rightarrow ZZ^{(*)} #rightarrow 4l")
         # Title(s) designating the year(s) (luminosity)
         latex.SetTextSize(self.luminosityTextSize)
         for index,luminosityString in enumerate(self.luminosityLatexStrings):
-            latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit, self.maxY*(0.8-0.1*index), luminosityString)
+            latex.DrawLatex(self.titleOffset*self.upperLimit+(1-self.titleOffset)*self.lowerLimit,
+                            self.maxY*(0.8-0.1*index), luminosityString)
         # Draw the Atlas Label
         ATLASLabel(self.titleOffset+0.13,0.875,'Work in Progress',1)
 
@@ -77,9 +83,11 @@ class PlotHiggs():
             combinedCanvas.Close()
         
         
-    def drawHistogram(self, histogram, option = 'E', leptonChannel = '4l',
-                      luminosityYear = '', saveFileName = '', axesLabel = '', fitFunction = None):
-        canvas = TCanvas('combinedCanvas'+str(self.combinedCanvasNum), 'combinedCanvas'+axesLabel, 0, 0, 1000, 800)
+    def drawHistogram(self, histogram, option = 'e', leptonChannel = '4l',
+                      luminosityYear = '', saveFileName = '', axesLabel = '',
+                      fitFunction = None):
+        canvas = TCanvas('combinedCanvas'+str(self.combinedCanvasNum),
+                         'combinedCanvas'+axesLabel, 0, 0, 1000, 800)
         self.combinedCanvasNum += 1
         canvas.cd()
         
@@ -125,7 +133,9 @@ class PlotHiggs():
             canvas.Close()
 
 
-    def setHistogram(self, histogram, rootFileNames, dataBranch = 'm4l_constrained', weightBranch = 'weight', channels = [], scale = []):
+    def setHistogram(self, histogram, rootFileNames, dataBranch = 'm4l_constrained',
+                     weightBranch = 'weight', channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e'],
+                     scale = []):
         if not channels:
             channels = self.channels
         files = []
@@ -133,7 +143,8 @@ class PlotHiggs():
             files.append(TFile(self.dir+fileName+'.root','read'))
             for channelIndex, channel in enumerate(channels):
                 currentHistogramName = fileName[-16:]+'_'+channel
-                currentHistogram = TH1F( currentHistogramName, currentHistogramName, self.nBins, self.lowerLimit, self.upperLimit )
+                currentHistogram = TH1F( currentHistogramName, currentHistogramName,
+                                         self.nBins, self.lowerLimit, self.upperLimit )
                 
                 currentTree = files[yearIndex].Get(channel)
                 currentTree.Draw(dataBranch+'>>'+currentHistogramName, weightBranch, 'n')
@@ -145,12 +156,21 @@ class PlotHiggs():
             
         histogram.SetMaximum(self.maxY)
 
-    def setHistogramWithChain(self, histogram, rootFileNames, dataBranch = 'm4l_constained', weightBranch = 'weight'):
+    def setHistogramWithChain(self, histogram, rootFileNames, dataBranch = 'm4l_constained',
+                              weightBranch = 'weight', channels = ['tree_incl_4mu','tree_incl_2mu2e','tree_incl_2e2mu','tree_incl_4e'],
+                              scale = 0, parallel = False):
         chain = TChain(histogram.GetName()+'Chain', histogram.GetName()+' Chain')
-        for fileName in rootFileNames:
-            for channel in self.channels:
-                chain.Add(self.dir+fileName+'.root/'+channel)
-        chain.Draw(dataBranch+'>>'+histogram.GetName(),weightBranch)
+        if parallel:
+            for index, fileName in enumerate(rootFileNames):
+                for channel in channels[index]:
+                    chain.Add(self.dir+fileName+'.root/'+channel)
+        else:
+            for fileName in rootFileNames:
+                for channel in channels:
+                    chain.Add(self.dir+fileName+'.root/'+channel)
+        chain.Draw(dataBranch+'>>'+histogram.GetName(), weightBranch, 'n')
+        if scale:
+            histogram.Scale(scale/histogram.Integral())
         histogram.SetMaximum(self.maxY)
 
     def combineHistograms(self, combinedHistogram, histogramList, multiplier = [1,1,1,1,1]):
@@ -196,7 +216,8 @@ class PlotHiggs():
             mcStack.Add(histogram)
         mcStack.SetMaximum(self.maxY)
 
-    def fitHistogram(self, histogram, combinedFit, parameters = [], fitFunctions = [], fittedFunctions = []):
+    def fitHistogram(self, histogram, combinedFit, parameters = [],
+                     fitFunctions = [], fittedFunctions = []):
         if fitFunctions:
             parameters = []
             for func in fitFunctions:

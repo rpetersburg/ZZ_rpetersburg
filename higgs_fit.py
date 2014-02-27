@@ -104,14 +104,19 @@ for i in xrange(6):
 
 
 simulationHiggsMass = round(10*fitMC.GetParameter(1))/10
-simulationHiggsError = round(10*fitMC.GetParameter(2)/math.sqrt(28))/10
+simulationHiggsError = math.ceil(10*fitMC.GetParameter(2)/math.sqrt(28))/10
 
-experimentalHiggsMass = math.ceil(10*fitAllData.GetParameter(1))/10
+experimentalHiggsMass = round(10*fitAllData.GetParameter(1))/10
 experimentalHiggsError = math.ceil(10*fitAllData.GetParameter(2)/math.sqrt(32))/10
 
 print
 print 'Experimental Higgs Mass:', str(experimentalHiggsMass), u'\u00B1', str(experimentalHiggsError), 'GeV'
 print 'Simulation Higgs Mass:', str(simulationHiggsMass), u'\u00B1', str(simulationHiggsError), 'GeV'
+
+
+signalStrength = round(10*fitAllData.GetParameter(0)/fitMC.GetParameter(0))/10
+signalStrengthError = round(10*signalStrength*(1/math.sqrt(fitAllData.GetParameter(0))+1/math.sqrt(fitMC.GetParameter(0))))/10
+print 'Signal Strength:', str(signalStrength), u'\u00B1', str(signalStrengthError)
 
 
 
