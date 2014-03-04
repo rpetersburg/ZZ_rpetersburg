@@ -115,7 +115,8 @@ print 'Simulation Higgs Mass:', str(simulationHiggsMass), u'\u00B1', str(simulat
 
 
 signalStrength = round(10*fitAllData.GetParameter(0)/fitMC.GetParameter(0))/10
-signalStrengthError = round(10*signalStrength*(1/math.sqrt(fitAllData.GetParameter(0))+1/math.sqrt(fitMC.GetParameter(0))))/10
+##signalStrengthError = round(10*signalStrength*(1/math.sqrt(fitAllData.GetParameter(0))+1/math.sqrt(fitMC.GetParameter(0))))/10
+signalStrengthError = math.ceil(10*signalStrength*math.sqrt(1/fitAllData.GetParameter(0)+1/fitMC.GetParameter(0)))/10
 print 'Signal Strength:', str(signalStrength), u'\u00B1', str(signalStrengthError)
 
 

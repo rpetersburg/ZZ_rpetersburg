@@ -6,14 +6,14 @@ SetAtlasStyle()
 
 deadCanvas = TCanvas('','',0,0,0,0)
 
-higgsObjects = [PlotHiggs.PlotHiggs(8, -3.14159, 3.14159, 0.05, 20),PlotHiggs.PlotHiggs(8, -1, 1, 0.05, 16)]
-higgsM34 = PlotHiggs.PlotHiggs(14, 10, 80, 0.05, 25)
-labels = [higgsM34.phiLabel, higgsM34.cosThetaLabel]
-angles = ['phi', 'cth1']
+higgsObjects = [PlotHiggs.PlotHiggs(8, -math.pi, math.pi, 0.05, 18), PlotHiggs.PlotHiggs(8, -1, 1, 0.05, 16), PlotHiggs.PlotHiggs(8, -math.pi, math.pi, 0.05, 18), PlotHiggs.PlotHiggs(8, -1, 1, 0.05, 24), PlotHiggs.PlotHiggs(8, -1, 1, 0.05, 16)]
+higgsM34 = PlotHiggs.PlotHiggs(9, 12, 57, 0.05, 25)
+labels = [higgsM34.phiLabel, higgsM34.cosTheta1Label, higgsM34.phi1Label, higgsM34.cosTheta2Label, higgsM34.cosThetaStarLabel]
+angles = ['phi', 'cth1', 'phi1', 'cth2', 'cthstr']
 spins = ['0p','0m','1p','1m','2p','2m']
 spinLabels = ["0^{+}", "0^{-}", '1^{+}', '1^{-}', "2^{+}", "2^{-}"]
-ksTest = [[0 for j in xrange(len(spins))] for i in xrange(2)]
-chiTest = [[0 for j in xrange(len(spins))] for i in xrange(2)]
+ksTest = [[0 for j in xrange(len(spins))] for i in xrange(len(angles))]
+chiTest = [[0 for j in xrange(len(spins))] for i in xrange(len(angles))]
 weightFactor = [1, -1, -1, -1, -1, -1]
 
 dataFiles = ['data11','data12']
@@ -74,25 +74,25 @@ for angleIndex, higgs in enumerate(higgsObjects):
         higgs.setHistogramWithChain(mcSignalHistogram, mcSignalFiles, angles[angleIndex], 'abs(weight)*(m4l_constrained<130 && m4l_constrained>115)', mcSignalChannels, higgs.higgsNorm, parallel)
         higgs.formatHistogram(mcSignalHistogram, kCyan)
 
-        mcSignalM34Histogram = TH1F( 'mcSignalM34Spin'+spin+angles[angleIndex]+'Histogram', 'MC Signal M34 Spin '+spin+angles[angleIndex]+' Histogram', higgsM34.nBins, higgsM34.lowerLimit, higgsM34.upperLimit )
-        higgsM34.setHistogramWithChain(mcSignalM34Histogram, mcSignalFiles, 'mZ2_constrained', str(weightFactor[spinIndex])+'*weight*(m4l_constrained<130 && m4l_constrained>115)', higgs.channels, higgs.zzBkgNorm)
-        higgsM34.formatHistogram(mcSignalM34Histogram, kCyan)
-
         # Plot Data and MC spin
         
         histogramList = [dataHistogram, mcJetBkgHistogram, mcZZBkgHistogram, mcSignalHistogram]
         histogramNames = ['Experimental Data', 'MC Background Z+jets','MC Background ZZ^{(*)}', 'MC Signal (m_{H} = 125 GeV, J^{p} = '+spinLabels[spinIndex]+')']
         histogramOptions = ['pe','f','f','f']
 
-        higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/HiggsSpin'+spin+angles[angleIndex], labels[angleIndex])
+        higgs.drawCombinedHistogram(histogramList,histogramNames, histogramOptions, 'combinedGraphs/Spin'+angles[angleIndex]+'/HiggsSpin'+spin+angles[angleIndex], labels[angleIndex])
 
         # Plot Data and MC m34
         if angleIndex == 0:
+            mcSignalM34Histogram = TH1F( 'mcSignalM34Spin'+spin+'Histogram', 'MC Signal M34 Spin '+spin+' Histogram', higgsM34.nBins, higgsM34.lowerLimit, higgsM34.upperLimit )
+            higgsM34.setHistogramWithChain(mcSignalM34Histogram, mcSignalFiles, 'mZ2_constrained', str(weightFactor[spinIndex])+'*weight*(m4l_constrained<130 && m4l_constrained>115)', higgsM34.channels, higgsM34.higgsNorm)
+            higgsM34.formatHistogram(mcSignalM34Histogram, kCyan)
+
             mcCombinedM34Histogram[spinIndex] = TH1F( 'mcCombinedM34Spin'+spin+'Histogram', 'MC Combined M34 Spin '+spin+' Histogram', higgsM34.nBins, higgsM34.lowerLimit, higgsM34.upperLimit )
             higgsM34.combineHistograms( mcCombinedM34Histogram[spinIndex], [mcJetBkgM34Histogram, mcZZBkgM34Histogram, mcSignalM34Histogram] )
             
             histogramList = [dataM34Histogram, mcJetBkgM34Histogram, mcZZBkgM34Histogram, mcSignalM34Histogram]
-            higgsM34.drawCombinedHistogram(histogramList, histogramNames, histogramOptions, 'combinedGraphs/HiggsM34Spin'+spin, higgsM34.m34Label)
+            higgsM34.drawCombinedHistogram(histogramList, histogramNames, histogramOptions, 'combinedGraphs/SpinM34/HiggsM34Spin'+spin, higgsM34.m34Label)
 
         # Calculate statistical relation between MC and Data for each Spin and angle
 
@@ -102,22 +102,39 @@ for angleIndex, higgs in enumerate(higgsObjects):
         ksTest[angleIndex][spinIndex] = dataHistogram.KolmogorovTest(mcCombinedHistogram, '')
         chiTest[angleIndex][spinIndex] = dataHistogram.Chi2Test(mcCombinedHistogram, '')
 
-
-for spinIndex, spin in enumerate(spins):
-    # Calculate statistical relation between MC and Data for m34    
+combinedSumKS = [0 for j in xrange(len(spins))]
+combinedSumChi= [0 for j in xrange(len(spins))]
+# Print all relevant data for each spin
+print 'Spin/Parity    \t',
+for spin in spins:
+    print spin + '\t',
+print '\nKolmogorov Test',
+for angleIndex, angle in enumerate(angles):
+    print '\n'+angle+'     \t',
+    for spinIndex in xrange(len(spins)):
+        combinedSumKS[spinIndex] += ksTest[angleIndex][spinIndex]
+        print str(round(1000*ksTest[angleIndex][spinIndex])/1000) + '\t',
+print '\nM34            \t',
+for spinIndex in xrange(len(spins)):
+    # Calculate statistical relation between MC and Data for m34
     ksM34Test = dataM34Histogram.KolmogorovTest(mcCombinedM34Histogram[spinIndex], '')
+    combinedSumKS[spinIndex] += ksM34Test
+    print str(round(1000*ksM34Test)/1000) + '\t',
+print '\nAverage        \t',
+for spinIndex in xrange(len(spins)):
+    print str(round(1000*combinedSumKS[spinIndex]/(len(angles)+1))/1000) + '\t',
+print '\nChi^2 Test',
+for angleIndex, angle in enumerate(angles):
+    print '\n'+angle+'     \t',
+    for spinIndex in xrange(len(spins)):
+        combinedSumChi[spinIndex] += chiTest[angleIndex][spinIndex]
+        print str(round(1000*chiTest[angleIndex][spinIndex])/1000) + '\t',
+print '\nM34            \t',
+for spinIndex in xrange(len(spins)):
+    # Calculate statistical relation between MC and Data for m34
     chiM34Test = dataM34Histogram.Chi2Test(mcCombinedM34Histogram[spinIndex], '')
-
-    # Print all relevant data for each spin
-    print 'Tests for data with Spin '+spin
-    print 'Kolmogorov Test:'
-    print 'Cos(Theta)   '+str(ksTest[1][spinIndex])
-    print 'Phi          '+str(ksTest[0][spinIndex])
-    print 'M34          '+str(ksM34Test)
-    print 'Chi2 Test:'
-    print 'Cos(Theta)   '+str(chiTest[1][spinIndex])
-    print 'Phi          '+str(chiTest[0][spinIndex])
-    print 'M34          '+str(chiM34Test)
-    print
-    print
-
+    combinedSumChi[spinIndex] += chiM34Test
+    print str(round(1000*chiM34Test)/1000) + '\t',
+print '\nAverage        \t',
+for spinIndex in xrange(len(spins)):
+    print str(round(1000*combinedSumChi[spinIndex]/(len(angles)+1))/1000) + '\t',

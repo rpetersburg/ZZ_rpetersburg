@@ -27,7 +27,10 @@ class PlotHiggs():
         self.axesLabel = '; m_{4l} [GeV]; Events/'+str(self.binWidth)+'GeV'
         self.m34Label = '; m_{34} [GeV]; Events/'+str(self.binWidth)+'GeV'
         self.phiLabel = '; #phi; Entries'
-        self.cosThetaLabel = '; Cos(#theta_{1}); Entries'
+        self.cosTheta1Label = '; Cos(#theta_{1}); Entries'
+        self.cosTheta2Label = '; Cos(#theta_{2}); Entries'
+        self.cosThetaStarLabel = '; Cos(#theta*); Entries'
+        self.phi1Label = '; #phi_{1}; Entries'
 
         self.jetBkgNorm = 3.92
         self.zzBkgNorm = 10.44
